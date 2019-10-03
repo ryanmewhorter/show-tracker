@@ -12,10 +12,9 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
-
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "shows")
@@ -33,11 +32,12 @@ public class Show extends AuditModel {
 	@ManyToMany(cascade = { CascadeType.ALL })
 	@JoinTable(name = "shows_artists", joinColumns = { @JoinColumn(name = "show_id") }, inverseJoinColumns = {
 			@JoinColumn(name = "artist_id") })
-	@JsonIgnore
 	private List<Artist> artists = new ArrayList<>();
 
 	@NotNull
-	private String venue;
+	@OneToOne
+	@JoinColumn(name = "venue_id")
+	private Venue venue;
 
 	public List<Artist> getArtists() {
 		return artists;
@@ -51,7 +51,7 @@ public class Show extends AuditModel {
 		return id;
 	}
 
-	public String getVenue() {
+	public Venue getVenue() {
 		return venue;
 	}
 
@@ -67,7 +67,7 @@ public class Show extends AuditModel {
 		this.id = id;
 	}
 
-	public void setVenue(String venue) {
+	public void setVenue(Venue venue) {
 		this.venue = venue;
 	}
 

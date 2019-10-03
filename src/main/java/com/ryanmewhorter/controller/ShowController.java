@@ -1,9 +1,12 @@
 package com.ryanmewhorter.controller;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,12 +15,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ryanmewhorter.model.Artist;
 import com.ryanmewhorter.model.Show;
+import com.ryanmewhorter.model.Venue;
 import com.ryanmewhorter.repository.ArtistRepository;
 import com.ryanmewhorter.repository.ShowRepository;
+import com.ryanmewhorter.repository.VenueRepository;
 
 @RestController
 @RequestMapping(path = "/shows")
@@ -25,9 +31,12 @@ public class ShowController {
 
 	@Autowired
 	private ShowRepository showRepository;
-	
+
 	@Autowired
 	private ArtistRepository artistRepository;
+
+	@Autowired
+	private VenueRepository venueRepository;
 
 	// Links an artist to a show
 	// Should this use Post?
@@ -47,16 +56,24 @@ public class ShowController {
 	}
 
 	@PostMapping
-	public ResponseEntity<Show> createShow(@RequestBody Show show) {
-		return ResponseEntity.ok(showRepository.save(show));
+	public ResponseEntity<Show> createShow(
+			@RequestParam(required = true) @DateTimeFormat(pattern = "MM/dd/yyyy") Date date,
+			@RequestParam(required = true) Long venueId, @RequestParam(defaultValue = "") List<Long> artistIds) {
+		Optional<Venue> venue = venueRepository.findById(venueId);
+		Iterable<Artist> artists = artistRepository.findAllById(artistIds);
+		if (date != null && venue.isPresent()) {
+			Show show = new Show();
+			show.setDate(date);
+			show.setVenue(venue.get());
+			List<Artist> artistList = new ArrayList<>();
+			artists.forEach(artistList::add);
+			show.setArtists(artistList);
+			return ResponseEntity.ok(showRepository.save(show));
+		} else {
+			return ResponseEntity.badRequest().build();
+		}
 	}
 
-	@DeleteMapping("/{id}")
-	public ResponseEntity<?> deleteShow(@PathVariable Long id) {
-		showRepository.deleteById(id);
-		return ResponseEntity.ok("Show has been deleted successfully.");
-	}
-	
 	@DeleteMapping("/{showId}/artists/{artistId}")
 	public ResponseEntity<Show> deleteArtistFromShow(@PathVariable Long showId, @PathVariable Long artistId) {
 		Optional<Show> show = showRepository.findById(showId);
@@ -73,6 +90,12 @@ public class ShowController {
 		} else {
 			return ResponseEntity.notFound().build();
 		}
+	}
+
+	@DeleteMapping("/{id}")
+	public ResponseEntity<?> deleteShow(@PathVariable Long id) {
+		showRepository.deleteById(id);
+		return ResponseEntity.ok("Show has been deleted successfully.");
 	}
 
 	@GetMapping("/{id}/artists")
