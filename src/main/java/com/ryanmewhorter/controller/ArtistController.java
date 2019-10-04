@@ -3,6 +3,7 @@ package com.ryanmewhorter.controller;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ryanmewhorter.model.Artist;
@@ -23,34 +25,45 @@ public class ArtistController {
 	private ArtistRepository repository;
 
 	@PostMapping
-	public Artist create(@RequestBody Artist artist) {
-		return repository.save(artist);
+	public ResponseEntity<Artist> create(@RequestBody Artist artist) {
+		return ResponseEntity.ok(repository.save(artist));
 	}
 
 	@DeleteMapping("/{id}")
-	public void delete(@PathVariable Long id) {
+	public ResponseEntity<?> delete(@PathVariable Long id) {
 		repository.deleteById(id);
+		return ResponseEntity.ok().build();
 	}
 
 	@GetMapping
-	public Iterable<Artist> getAll() {
-		return repository.findAll();
+	public ResponseEntity<Iterable<Artist>> getAll(@RequestParam(name = "name", required = false) String name) {
+		System.out.println("name = " + name);
+		if (name != null && !name.equals("")) {
+			return ResponseEntity.ok(repository.findByNameContains(name));
+		} else {
+			return ResponseEntity.ok(repository.findAll());
+		}
 	}
 
 	@GetMapping("/{id}")
-	public Optional<Artist> getOne(@PathVariable Long id) {
-		return repository.findById(id);
+	public ResponseEntity<Artist> getOne(@PathVariable Long id) {
+		Optional<Artist> artist = repository.findById(id);
+		if (artist.isPresent()) {
+			return ResponseEntity.ok(artist.get());
+		} else {
+			return ResponseEntity.notFound().build();
+		}
 	}
 
 	@PutMapping("/{id}")
-	public Artist update(@RequestBody Artist updatedArtist, @PathVariable Long id) {
+	public ResponseEntity<Artist> update(@RequestBody Artist updatedArtist, @PathVariable Long id) {
 		return repository.findById(id).map(artist -> {
 			artist.setName(updatedArtist.getName());
 			artist.setShows(updatedArtist.getShows());
-			return repository.save(artist);
+			return ResponseEntity.ok(repository.save(artist));
 		}).orElseGet(() -> {
 			updatedArtist.setId(id);
-			return repository.save(updatedArtist);
+			return ResponseEntity.ok(repository.save(updatedArtist));
 		});
 	}
 }
