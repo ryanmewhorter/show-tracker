@@ -22,16 +22,16 @@ import com.ryanmewhorter.repository.ArtistRepository;
 public class ArtistController {
 
 	@Autowired
-	private ArtistRepository repository;
+	private ArtistRepository artistRepository;
 
 	@PostMapping
 	public ResponseEntity<Artist> create(@RequestBody Artist artist) {
-		return ResponseEntity.ok(repository.save(artist));
+		return ResponseEntity.ok(artistRepository.save(artist));
 	}
 
 	@DeleteMapping("/{id}")
 	public ResponseEntity<?> delete(@PathVariable Long id) {
-		repository.deleteById(id);
+		artistRepository.deleteById(id);
 		return ResponseEntity.ok().build();
 	}
 
@@ -39,15 +39,15 @@ public class ArtistController {
 	public ResponseEntity<Iterable<Artist>> getAll(@RequestParam(name = "name", required = false) String name) {
 		System.out.println("name = " + name);
 		if (name != null && !name.equals("")) {
-			return ResponseEntity.ok(repository.findByNameContains(name));
+			return ResponseEntity.ok(artistRepository.findByNameContainsIgnoreCase(name));
 		} else {
-			return ResponseEntity.ok(repository.findAll());
+			return ResponseEntity.ok(artistRepository.findAll());
 		}
 	}
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Artist> getOne(@PathVariable Long id) {
-		Optional<Artist> artist = repository.findById(id);
+		Optional<Artist> artist = artistRepository.findById(id);
 		if (artist.isPresent()) {
 			return ResponseEntity.ok(artist.get());
 		} else {
@@ -57,13 +57,13 @@ public class ArtistController {
 
 	@PutMapping("/{id}")
 	public ResponseEntity<Artist> update(@RequestBody Artist updatedArtist, @PathVariable Long id) {
-		return repository.findById(id).map(artist -> {
+		return artistRepository.findById(id).map(artist -> {
 			artist.setName(updatedArtist.getName());
 			artist.setShows(updatedArtist.getShows());
-			return ResponseEntity.ok(repository.save(artist));
+			return ResponseEntity.ok(artistRepository.save(artist));
 		}).orElseGet(() -> {
 			updatedArtist.setId(id);
-			return ResponseEntity.ok(repository.save(updatedArtist));
+			return ResponseEntity.ok(artistRepository.save(updatedArtist));
 		});
 	}
 }

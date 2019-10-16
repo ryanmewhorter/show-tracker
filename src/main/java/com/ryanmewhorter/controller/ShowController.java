@@ -58,19 +58,23 @@ public class ShowController {
 	@PostMapping
 	public ResponseEntity<Show> createShow(
 			@RequestParam(required = true) @DateTimeFormat(pattern = "MM/dd/yyyy") Date date,
-			@RequestParam(required = true) Long venueId, @RequestParam(defaultValue = "") List<Long> artistIds) {
-		Optional<Venue> venue = venueRepository.findById(venueId);
-		Iterable<Artist> artists = artistRepository.findAllById(artistIds);
-		if (date != null && venue.isPresent()) {
+			@RequestParam(required = true) String venueName, @RequestParam(defaultValue = "") List<String> artistNames) {
+		Venue venue = venueRepository.findOneByNameIgnoreCase(venueName);
+		Iterable<Artist> artists = artistRepository.findAllByNamesIgnoreCase(artistNames);
+		if (date != null && venue != null) {
 			Show show = new Show();
 			show.setDate(date);
-			show.setVenue(venue.get());
-			List<Artist> artistList = new ArrayList<>();
-			artists.forEach(artistList::add);
-			show.setArtists(artistList);
-			return ResponseEntity.ok(showRepository.save(show));
+			show.setVenue(venue);
+			List<Artist> lineup = new ArrayList<>();
+			artists.forEach(lineup::add);
+			if (lineup.size() > 0) {
+				show.setArtists(lineup);
+				return ResponseEntity.ok(show);
+			} else {
+				return ResponseEntity.notFound().build();
+			}
 		} else {
-			return ResponseEntity.badRequest().build();
+			return ResponseEntity.notFound().build();
 		}
 	}
 
